@@ -34,7 +34,10 @@
 
 | # | 内容 | 截图 |
 |---|------|------|
-| 1 | DevEco Studio Previewer — 小费计算器页面 | ![previewer](https://raw.githubusercontent.com/JungleTestLabs/opencalc-harmonyos/screenshots/issue40/.github/screenshots/issue47/2-tip-calculator/01_previewer.jpg) |
+| 1 | 模拟器实机 — 导航首页（标准计算器 + 小费计算器，带 NEW 标） | ![nav-menu](./screenshots/00_nav_menu.jpeg) |
+| 2 | 模拟器实机 — 小费计算器页面（账单输入、比例预设 10%/15%/18%/20%/自定义、用餐人数） | ![tip-calculator](./screenshots/01_tip_calculator.jpeg) |
+
+> 截图来源：HarmonyOS 模拟器（127.0.0.1:5555，1256×2760），`hdc snapshot_display` 抓取，时间 2026-05-17 23:29。
 
 ### 五、判决
 

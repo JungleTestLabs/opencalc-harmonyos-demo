@@ -35,8 +35,9 @@
 
 | # | 内容 | 截图 |
 |---|------|------|
-| 1 | DevEco Studio 加载项目 | ![project](https://raw.githubusercontent.com/JungleTestLabs/opencalc-harmonyos/screenshots/issue40/.github/screenshots/issue47/1-percent-button/01_project_loaded.jpg) |
-| 2 | Previewer 显示计算器界面（`%` 按钮可见于 AC 右侧） | ![previewer](https://raw.githubusercontent.com/JungleTestLabs/opencalc-harmonyos/screenshots/issue40/.github/screenshots/issue47/1-percent-button/02_previewer.jpg) |
+| 1 | 模拟器实机 — 主计算器页面（第一排 `AC \| % \| ( \| ) \| ÷` 5 按钮完整显示，% 加入后不溢出右边框） | ![calculator-main](./screenshots/01_calculator_main.jpeg) |
+
+> 截图来源：HarmonyOS 模拟器（127.0.0.1:5555，1256×2760），`hdc snapshot_display` 抓取，时间 2026-05-17 23:26。
 
 ### 五、判决
 

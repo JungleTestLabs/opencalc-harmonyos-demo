@@ -37,7 +37,10 @@
 
 | # | 内容 | 截图 |
 |---|------|------|
-| 1 | DevEco Studio Previewer — 函数图像页面 | ![previewer](https://raw.githubusercontent.com/JungleTestLabs/opencalc-harmonyos/screenshots/issue40/.github/screenshots/issue47/3-draw-func/01_previewer.jpg) |
+| 1 | 模拟器实机 — 导航首页（标准计算器 + 函数图像，带 NEW 标） | ![nav-menu](./screenshots/00_nav_menu.jpeg) |
+| 2 | 模拟器实机 — 函数图像页面（默认 `y = sin(x)` 已渲染，6 个预设函数胶囊：sin/cos/tan/x²/x³/sqrt） | ![draw-func](./screenshots/01_draw_func.jpeg) |
+
+> 截图来源：HarmonyOS 模拟器（127.0.0.1:5555，1256×2760），`hdc snapshot_display` 抓取，时间 2026-05-17 23:30。
 
 ### 五、判决
 
