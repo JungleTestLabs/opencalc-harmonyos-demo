@@ -2,7 +2,7 @@
 
 | 任务 | 状态 | 备注 |
 |------|------|------|
-| T1: 创建 TipCalculatorPage.ets | ✅ 完成 | 410 行 |
+| T1: 创建 DrawFuncPage.ets | ✅ 完成 | 350 行，Canvas 绘图 |
 | T2: 注册页面路由 | ✅ 完成 | main_pages.json |
 | T3: 修改 Index.ets 导航 | ✅ 完成 | 导航菜单 |
 
