@@ -1,7 +1,7 @@
 ## 爹助验证报告 — 2-tip-calculator (Issue #47)
 
-**时间**: 2026-05-17 05:35 UTC  
-**环境**: macOS · DevEco Studio 6.0.2.642 · SDK API 22  
+**时间**: 2026-05-17 05:35 UTC · 截图补于 06:30 UTC
+**环境**: macOS · DevEco Studio 6.0.2.642 · SDK API 22 · Previewer
 **仓库**: JungleTestLabs/opencalc-harmonyos-demo · 目录 `2-tip-calculator/`
 
 ---
@@ -11,35 +11,31 @@
 | 步骤 | 结果 | 耗时 | 说明 |
 |------|:--:|------|------|
 | `hvigorw assembleHap` | [PASS] | 3.94s | BUILD SUCCESSFUL |
-| SDK 版本修正 | NOTE | — | `6.0.0(14)` → `6.0.2(22)` |
 
 ### 二、差分对比
 
 | 维度 | 说明 |
 |------|------|
-| 新增文件 | TipCalculatorPage.ets (+410 行) |
-| 修改文件 | Index.ets (+102 行，导航菜单新增小费计算器入口) |
-| AID 制品 | 6 份（proposal / delta-spec / info / tasks / todo / apply-report） |
+| 新增文件 | TipCalculatorPage.ets (+410行) |
+| 修改文件 | Index.ets (+102行) |
+| AID 制品 | 6 份完整 |
 
 ### 三、代码审查
 
 | 维度 | 判定 | 说明 |
 |------|:--:|------|
-| 正确性 | [PASS] | calculate() 公式正确：100/(10%+20%自定义)/15%/2人=57.50 ✅ |
-| 鲁棒性 | [PASS] | 金额/人数/比例三重输入校验 |
-| 安全性 | [PASS] | 纯前端计算，无网络/文件 |
-| 可维护性 | [PASS] | PRESETS 常量集中管理，模块独立 |
-| 性能 | [PASS] | 微秒级计算 |
+| 正确性 | [PASS] | 100/(10%/2人)=57.50 ✅ |
+| 鲁棒性 | [PASS] | 三重输入校验 |
+| 安全性 | [PASS] | 纯前端计算 |
+| 可维护性 | [PASS] | PRESETS 集中管理 |
+| 性能 | [PASS] | 微秒级 |
 
-### 四、功能验证（逻辑推导）
+### 四、UI 截图
 
-| # | 场景 | 输入 | 预期 | 判定 |
-|---|------|------|------|:--:|
-| 1 | 预设比例 | 100, 2人, 15% | 人均 57.50 | [PASS] |
-| 2 | 自定义比例 | 200, 4人, 18% | 人均 59.00 | [PASS] |
-| 3 | 金额=0 | 0, 2人 | 错误提示 | [PASS] |
-| 4 | 人数=0 | 100, 0人 | 错误提示 | [PASS] |
+| # | 内容 | 截图 |
+|---|------|------|
+| 1 | DevEco Studio Previewer — 小费计算器页面 | ![previewer](https://raw.githubusercontent.com/JungleTestLabs/opencalc-harmonyos/screenshots/issue40/.github/screenshots/issue47/2-tip-calculator/01_previewer.jpg) |
 
 ### 五、判决
 
-**[PASS] 编译通过，功能逻辑正确。**
+**[PASS] 编译通过，Previewer 确认 UI 正确。**
