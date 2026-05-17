@@ -4,6 +4,11 @@
 import { router } from '@kit.ArkUI'
 import { CalcEngine } from '../calculator/Calculator'
 
+interface Point {
+  x: number
+  y: number
+}
+
 @Entry
 @Component
 export struct DrawFuncPage {
@@ -64,8 +69,8 @@ export struct DrawFuncPage {
   }
 
   // ==================== 函数采样 ====================
-  private sampleFunction(expr: string): { x: number, y: number }[] {
-    const points: { x: number, y: number }[] = []
+  private sampleFunction(expr: string): Point[] {
+    const points: Point[] = []
     this.errorMsg = ''
 
     if (expr.trim().length === 0) {
@@ -104,7 +109,7 @@ export struct DrawFuncPage {
   private drawGraph(): void {
     if (!this.canvasReady) return
 
-    const points: { x: number, y: number }[] = this.sampleFunction(this.expression)
+    const points: Point[] = this.sampleFunction(this.expression)
 
     const ctx: CanvasRenderingContext2D = this.context
     const w: number = ctx.width
@@ -428,7 +433,6 @@ export struct DrawFuncPage {
         })
       }
       .width('100%')
-      .flexWrap(FlexWrap.Wrap)
 
       // 绘制按钮 + 错误信息
       Row() {

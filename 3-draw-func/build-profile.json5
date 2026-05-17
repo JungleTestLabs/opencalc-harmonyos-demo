@@ -18,8 +18,8 @@
     "products": [
       {
         "name": "default",
-        "compatibleSdkVersion": "6.0.0(14)",
-        "targetSdkVersion": "6.0.0(14)",
+        "compatibleSdkVersion": "6.0.2(22)",
+        "targetSdkVersion": "6.0.2(22)",
         "runtimeOS": "HarmonyOS"
       }
     ],
