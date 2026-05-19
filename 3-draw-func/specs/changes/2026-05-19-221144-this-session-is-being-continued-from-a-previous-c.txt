@@ -1,0 +1,569 @@
+╭─── Claude Code v2.1.144 ─────────────────────────────────────────────────────╮
+│                                                    │ Tips for getting        │
+│                    Welcome back!                   │ started                 │
+│                                                    │ Run /init to create a … │
+│                       ▐▛███▜▌                      │ ─────────────────────── │
+│                      ▝▜█████▛▘                     │ What's new              │
+│                        ▘▘ ▝▝                       │ Added `/resume` suppor… │
+│                                                    │ Added elapsed duration… │
+│            Opus 4.7 · API Usage Billing            │ The `/plugin` browse a… │
+│   ~/…/Projects/JungleTestLabs/opencalc-harmonyos   │ /release-notes for more │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+✻ Conversation compacted (ctrl+o for history)
+
+  ⎿  Read hvigorfile.ts (19 lines)
+  ⎿  Read scripts/fix-deveco-sdk.sh (80 lines)
+  ⎿  Read build-profile.json5 (52 lines)
+  ⎿  Read ../../../../../../../../Applications/DevEco-Studio.app/Contents/sdk/default/openharmony/ets/sdk-pkg.json (13 lines)
+  ⎿  Read ../../../../../../../../Applications/DevEco-Studio.app/Contents/tools/hvigor/hvigor-ohos-plugin/node_modules/@ohos/hos-sdkmanager-common/build/res/hos-config.json (67 lines)
+
+⏺ 刚才我把分析做完后，三条路你还没选。基于刚刚 reload
+  出来的几个文件状态（hos-config.json 的 pathVersionMapper["6.0.2"] = 
+  "HarmonyOS-6.0.2" 还在；hvigorfile.ts 已经清干净；scripts/fix-deveco-sdk.sh 的
+   step 2 通过 --undo 撤掉后保持着；root sdk-pkg.json 应已恢复），现状是：磁盘上
+   step 1 的补丁还在，sync 仍报缺组件。
+
+  我建议从最稳的那条开始 —— DevEco SDK Manager 卸载 + 重装 HarmonyOS 
+  6.0.2。具体步骤：
+
+  1. 先把 step 1 也 undo 掉，避免重装后 hos-config.json 被改过的副本干扰新装：
+  sudo bash scripts/fix-deveco-sdk.sh --undo-all
+  2. 重启 DevEco Studio。
+  3. 顶部菜单 Tools → SDK Manager。
+  4. 在 HarmonyOS 选项卡里找到 API 22 / 6.0.2，Uninstall。
+  5. 装完卸载后，再点 Install 重新下载 API 22 (HarmonyOS 6.0.2)。
+  6. 安装完后再次 Sync。
+
+  如果重装后 sync 仍失败，说明问题不在 SDK 内容本身而在 DevEco 6.0.2
+  的安装包/装机包，那时我们再走第 2 条（把 SDK location 改到
+  ~/Library/Huawei/Sdk）。
+
+  要不要现在先执行第 1 步 --undo-all？
+
+✻ Crunched for 8m 58s
+
+❯ 重新安装deveco了也没用，其他项目就没问题：/Applications/DevEco-Studio.app/Con 
+  tents/tools/node/bin/node                                                     
+  /Applications/DevEco-Studio.app/Contents/tools/hvigor/bin/hvigorw.js clean    
+  --mode module -p product=default assembleHap --analyze=normal --parallel      
+  --incremental --daemon                                                        
+  [DBG] checkComponentExistence: required=toolchains,ets,js,native,previewer    
+  mapKeys= isHms=false                                                          
+  [DBG] getLocalSdks called with e=22                                           
+  [DBG] hosVersion=6.0.2                                                        
+  [DBG] _getLocalComponents returned 1 items                                    
+  [DBG] raw comp: path=HarmonyOS-6.0.2 v=6.0.2                                  
+  loc=/Applications/DevEco-Studio.app/contents/sdk/default                      
+  DBG components loaded:1                                                       
+  DBG comp:HarmonyOS-6.0.2 v=6.0.2                                              
+  loc=/Applications/DevEco-Studio.app/contents/sdk/default                      
+  [DEBUG] getLocalSdks return this._mapComponentsByPath(t)                      
+  [DBG] _mapComponentsByPath about to return with 1 items                       
+  [DBG] checkComponentExistence: required=toolchains,ets,js,native,previewer    
+  mapKeys=HarmonyOS-6.0.2 isHms=false                                           
+  > hvigor ERROR: 00303168 Configuration Error                                  
+  Error Message: SDK component missing.                                         
+
+⏺ 关键线索：其他项目能正常 build —— 说明 SDK
+  安装本身是好的，问题在这个项目自身。重装 SDK 走错方向了。
+
+  最显眼的差异是这个项目的 hvigorfile.ts 里还有那段
+  monkey-patch（require(...hos-component-constants.js) 那段）。其他项目的
+  hvigorfile.ts 应该是干净的一行 export。这段 require 可能干扰了 plugin
+  的模块加载时序。
+
+  我先把 hvigorfile.ts 回到标准状态再清缓存。
+
+⏺ Write(hvigorfile.ts)
+  ⎿  Removed 17 lines
+       1 -// 注: hvigor 6.0.2 SDK 扫描问题的项目级 workaround 已经被实验 
+         -证伪                                                           
+       2 -// (probe 显示 plugin runtime 不使用本文件 require 得到的同一 H
+         -osVersionMapper 对象)。                                        
+       3 -// 真正根治需要重装 SDK 或调整 /Applications/.../sdk/default 目
+         -录布局。                                                       
+       4 -// 这里保留 mapper 预热只是为了不让 build 任务阶段误踩同样的坑(
+         -对 sync 无效)。                                                
+       5 -try {                                                          
+       6 -  const hosConst = require(                                    
+       7 -    '/Applications/DevEco-Studio.app/Contents/tools/hvigor/hvig
+         -or-ohos-plugin/' +                                             
+       8 -      'node_modules/@ohos/hos-sdkmanager-common/build/src/hos/c
+         -onst/hos-component-constants.js'                               
+       9 -  );                                                           
+      10 -  const pvm = hosConst && hosConst.HOS_CONFIG && hosConst.HOS_C
+         -ONFIG.pathVersionMapper;                                       
+      11 -  if (pvm && !pvm['6.0.2']) {                                  
+      12 -    pvm['6.0.2'] = 'HarmonyOS-6.0.2';                          
+      13 -  }                                                            
+      14 -} catch (e) {                                                  
+      15 -  console.warn('[hvigorfile] SDK pathVersionMapper patch skippe
+         -d:', (e as Error).message);                                    
+      16 -}                                                              
+      17 -                                                               
+       1  export { appTasks } from '@ohos/hvigor-ohos-plugin';
+
+⏺ 再对比下这个项目还有没有其他可疑差异。先看几个关键文件。
+
+  Searched for 1 pattern, listed 1 directory (ctrl+o to expand)
+
+⏺ 没有 local.properties —— 其他正常项目可能有。先确认下其他项目长啥样。
+
+  Read 2 files, listed 1 directory (ctrl+o to expand)
+
+⏺ 旁边就有 opencalc-harmonyos-demo，对比一下两个项目的配置。
+
+  Read 6 files, listed 2 directories (ctrl+o to expand)
+
+⏺ 诧异 —— opencalc-harmonyos-demo/0-basic/
+  的配置和你这个项目几乎完全一样（同样的 compatibleSdkVersion: "6.0.2(22)"，连
+  hvigorfile.ts 的 monkey-patch 都一样）。所以这两个项目要么都能 build
+  要么都不能。
+
+  我先确认下"其他项目"具体指哪个，可能不是 demo。
+
+  Read 1 file, listed 2 directories (ctrl+o to expand)
+
+⏺ 找到关键差异：HelloHarmony 用的是 6.0.1(21)（API 21），不是 6.0.2(22)。
+
+  Read 2 files, listed 1 directory (ctrl+o to expand)
+
+⏺ 找到根因了。两个差异：
+
+  1. HelloHarmony 用 6.0.1(21) —— 6.0.1 的 SDK 是平铺布局（hvigor 默认能扫）
+  2. 你这个项目用 6.0.2(22) —— 6.0.2 的 SDK 是嵌套布局（组件都在 openharmony/
+  子目录里）
+
+  而且看 sdk/default 当前内容：
+  hms  openharmony  sdk-pkg.json
+  之前的顶层 
+  symlinks（ets/js/native/previewer/toolchains/HarmonyOS-6.0.2）都没了 —— 你重装
+   SDK 时被清掉了。所以现在 pathVersionMapper["6.0.2"]="HarmonyOS-6.0.2"
+  这个补丁指向的目录已经不存在，根本扫不到。
+
+  两条出路，选哪条？
+
+⏺ User answered Claude's questions:
+  ⎿  · 选择哪种方式根治这个项目的 sync 失败？ → 补齐 6.0.2 顶层 symlinks
+
+⏺ 我把脚本改成"建 5 个顶层 symlinks"的逻辑，并把之前的 mapper
+  补丁也撤掉（用平铺布局后那个补丁就不需要了）。
+
+⏺ Write(scripts/fix-deveco-sdk.sh)
+  ⎿  Added 41 lines, removed 47 lines
+       1  #!/usr/bin/env bash
+       2  # Fix DevEco Studio 6.0.2 hvigor "SDK component missing" on mac
+          OS.
+       3  #
+       4 -# Two-step root-cause fix (re-run safe / idempotent):          
+       5 -#   step1: patch hos-config.json so pathVersionMapper["6.0.2"]=
+         -"HarmonyOS-6.0.2"                                              
+       6 -#   step2: rename root sdk/default/sdk-pkg.json -> sdk-pkg.json
+         -.disabled-by-fix                                               
+       7 -#          so hvigor stops treating sdk/default as a single bun
+         -dled SDK and                                                   
+       8 -#          recurses into the HarmonyOS-6.0.2/ symlink to enumer
+         -ate sub-components.                                            
+       4 +# Root cause: the 6.0.2 SDK installer drops components into    
+       5 +# /Applications/DevEco-Studio.app/Contents/sdk/default/openharm
+         +ony/<comp>/                                                    
+       6 +# instead of the flat layout sdk/default/<comp>/ that hvigor sc
+         +ans by default.                                                
+       7 +# This script creates top-level symlinks so hvigor's flat scan 
+         +finds them:                                                    
+       8 +#   ets, js, native, previewer, toolchains -> openharmony/<same
+         +>                                                              
+       9  #
+      10 +# Also disables the root sdk-pkg.json (which makes hvigor treat
+         + the whole                                                     
+      11 +# sdk/default as one bundled SDK and shadows the per-component 
+         +manifests).                                                    
+      12 +#                                                              
+      13 +# Idempotent. Run after every DevEco Studio install/upgrade.   
+      14  # Requires macOS App Management permission for Terminal (Sequoi
+          a+).
+      11 -# Run after every DevEco Studio install/upgrade.               
+      15  #
+      16  # Usage:
+      17  #   sudo bash scripts/fix-deveco-sdk.sh          # apply fix
+      15 -#   sudo bash scripts/fix-deveco-sdk.sh --undo   # revert both 
+         -steps                                                          
+      18 +#   sudo bash scripts/fix-deveco-sdk.sh --undo   # remove symli
+         +nks, restore sdk-pkg.json                                      
+      19  
+      20  set -e
+      21  
+      19 -CFG="/Applications/DevEco-Studio.app/Contents/tools/hvigor/hvig
+         -or-ohos-plugin/node_modules/@ohos/hos-sdkmanager-common/build/r
+         -es/hos-config.json"                                            
+      20 -PKG_ROOT="/Applications/DevEco-Studio.app/Contents/sdk/default/
+         -sdk-pkg.json"                                                  
+      22 +SDK_ROOT="/Applications/DevEco-Studio.app/Contents/sdk/default"
+      23 +PKG_ROOT="$SDK_ROOT/sdk-pkg.json"                              
+      24  PKG_ROOT_OFF="$PKG_ROOT.disabled-by-fix"
+      22 -DATE_TAG="$(date +%Y%m%d)"                                     
+      25 +COMPONENTS=(ets js native previewer toolchains)                
+      26  
+      27  case "${1:-apply}" in
+      28    --undo|undo)
+      26 -    echo "==> Reverting step 2 only (restore root sdk-pkg.json;
+         - keep step 1 patch)"                                           
+      29 +    echo "==> Removing symlinks and restoring root sdk-pkg.json
+         +"                                                              
+      30 +    for c in "${COMPONENTS[@]}"; do                            
+      31 +      if [ -L "$SDK_ROOT/$c" ]; then                           
+      32 +        rm "$SDK_ROOT/$c"                                      
+      33 +        echo "    removed symlink $SDK_ROOT/$c"                
+      34 +      fi                                                       
+      35 +    done                                                       
+      36      if [ -f "$PKG_ROOT_OFF" ] && [ ! -f "$PKG_ROOT" ]; then
+      37        mv "$PKG_ROOT_OFF" "$PKG_ROOT"
+      38        echo "    restored $PKG_ROOT"
+      30 -    else                                                       
+      31 -      echo "    nothing to restore"                            
+      39      fi
+      40      exit 0
+      41      ;;
+      35 -  --undo-all)                                                  
+      36 -    echo "==> Reverting step 2 and step 1"                     
+      37 -    [ -f "$PKG_ROOT_OFF" ] && [ ! -f "$PKG_ROOT" ] && mv "$PKG_
+         -ROOT_OFF" "$PKG_ROOT" && echo "    restored $PKG_ROOT"         
+      38 -    LATEST_BAK="$(ls -t "$CFG".bak.* 2>/dev/null | head -n1 || 
+         -true)"                                                         
+      39 -    if [ -n "$LATEST_BAK" ]; then                              
+      40 -      cp "$LATEST_BAK" "$CFG"                                  
+      41 -      echo "    restored hos-config.json from $LATEST_BAK"     
+      42 -    fi                                                         
+      43 -    exit 0                                                     
+      44 -    ;;                                                         
+      42  esac
+      43  
+      47 -# Step 1: patch hos-config.json                                
+      48 -if [ ! -f "$CFG" ]; then                                       
+      49 -  echo "ERROR: hos-config.json not found: $CFG"                
+      44 +if [ ! -d "$SDK_ROOT/openharmony" ]; then                      
+      45 +  echo "ERROR: $SDK_ROOT/openharmony not found. Install Harmony
+         +OS 6.0.2 SDK first."                                           
+      46    exit 1
+      47  fi
+      52 -cp -n "$CFG" "$CFG.bak.$DATE_TAG" 2>/dev/null || true          
+      53 -/usr/bin/python3 - "$CFG" <<'PY'                               
+      54 -import json, sys                                               
+      55 -p = sys.argv[1]                                                
+      56 -with open(p) as f:                                             
+      57 -    d = json.load(f)                                           
+      58 -if d["pathVersionMapper"].get("6.0.2") != "HarmonyOS-6.0.2":   
+      59 -    d["pathVersionMapper"]["6.0.2"] = "HarmonyOS-6.0.2"        
+      60 -    with open(p, "w") as f:                                    
+      61 -        json.dump(d, f, indent=2, ensure_ascii=False)          
+      62 -    print("step1: patched pathVersionMapper[6.0.2] =", repr(d["
+         -pathVersionMapper"]["6.0.2"]))                                 
+      63 -else:                                                          
+      64 -    print("step1: already patched, skip")                      
+      65 -PY                                                             
+      48  
+      67 -# Step 2: defuse root sdk-pkg.json so hvigor scans sub-componen
+         -ts                                                             
+      49 +# Step 1: create per-component symlinks                        
+      50 +for c in "${COMPONENTS[@]}"; do                                
+      51 +  if [ ! -d "$SDK_ROOT/openharmony/$c" ]; then                 
+      52 +    echo "    skip $c (openharmony/$c not present)"            
+      53 +    continue                                                   
+      54 +  fi                                                           
+      55 +  if [ -L "$SDK_ROOT/$c" ] || [ -e "$SDK_ROOT/$c" ]; then      
+      56 +    echo "    skip $c (already exists)"                        
+      57 +    continue                                                   
+      58 +  fi                                                           
+      59 +  ln -s "openharmony/$c" "$SDK_ROOT/$c"                        
+      60 +  echo "    linked $SDK_ROOT/$c -> openharmony/$c"             
+      61 +done                                                           
+      62 +                                                               
+      63 +# Step 2: disable the root sdk-pkg.json so hvigor doesn't treat
+         + the whole                                                     
+      64 +# sdk/default as a single bundled SDK (it would shadow the per-
+         +component scan).                                               
+      65  if [ -f "$PKG_ROOT" ]; then
+      69 -  cp -n "$PKG_ROOT" "$PKG_ROOT.bak.$DATE_TAG" 2>/dev/null || tr
+         -ue                                                             
+      66    mv "$PKG_ROOT" "$PKG_ROOT_OFF"
+      71 -  echo "step2: renamed $PKG_ROOT -> $PKG_ROOT_OFF"             
+      67 +  echo "    disabled $PKG_ROOT -> $PKG_ROOT_OFF"               
+      68  elif [ -f "$PKG_ROOT_OFF" ]; then
+      73 -  echo "step2: already disabled, skip"                         
+      74 -else                                                           
+      75 -  echo "step2: root sdk-pkg.json not present at $PKG_ROOT (alre
+         -ady removed?)"                                                 
+      69 +  echo "    root sdk-pkg.json already disabled"                
+      70  fi
+      71  
+      72  echo ""
+      79 -echo "Done. Now Sync in DevEco; if it still fails, run with --u
+         -ndo and report logs."                                          
+      73 +echo "Done. Now Sync in DevEco."                               
+
+⏺ 脚本就绪。hvigorfile.ts 也已经清空成一行 export。
+
+  现在执行：
+  sudo bash scripts/fix-deveco-sdk.sh
+
+  它会：
+  1. 在 sdk/default/ 下建 5 个 symlink（ets/js/native/previewer/toolchains →
+  openharmony/<同名>）
+  2. 把根 sdk-pkg.json 改名为 .disabled-by-fix（防止 hvigor 把整个 default
+  当一个 bundle 而盖掉子组件扫描）
+
+  跑完后在 DevEco 里 Sync。如果还失败，把新日志贴过来。
+
+✻ Baked for 3m 43s
+
+❯ DevEco Studio SDK中缺少必需的组件。请重新安装DevEco Studio。                  
+⏺ step 2 让 DevEco 启动校验失败了。需要恢复根 sdk-pkg.json，只保留 5 个
+  symlink。
+
+  先恢复：
+  sudo mv /Applications/DevEco-Studio.app/Contents/sdk/default/sdk-pkg.json.disa
+  bled-by-fix /Applications/DevEco-Studio.app/Contents/sdk/default/sdk-pkg.json
+
+  然后修脚本，去掉 step 2（symlinks 那一步保留，但不再禁用 root manifest）。
+
+⏺ Write(scripts/fix-deveco-sdk.sh)
+  ⎿  Added 12 lines, removed 15 lines
+       7  # This script creates top-level symlinks so hvigor's flat scan 
+          finds them:
+       8  #   ets, js, native, previewer, toolchains -> openharmony/<same
+          >
+       9  #
+      10 -# Also disables the root sdk-pkg.json (which makes hvigor treat
+         - the whole                                                     
+      11 -# sdk/default as one bundled SDK and shadows the per-component 
+         -manifests).                                                    
+      10 +# Do NOT touch the root sdk-pkg.json — DevEco's launch-time SDK
+         + integrity check                                               
+      11 +# requires it. Removing it causes DevEco to refuse to start.   
+      12  #
+      13  # Idempotent. Run after every DevEco Studio install/upgrade.
+      14  # Requires macOS App Management permission for Terminal (Sequoi
+          a+).
+      15  #
+      16  # Usage:
+      17  #   sudo bash scripts/fix-deveco-sdk.sh          # apply fix
+      18 -#   sudo bash scripts/fix-deveco-sdk.sh --undo   # remove symli
+         -nks, restore sdk-pkg.json                                      
+      18 +#   sudo bash scripts/fix-deveco-sdk.sh --undo   # remove symli
+         +nks                                                            
+      19  
+      20  set -e
+      21  
+     ...
+      26  
+      27  case "${1:-apply}" in
+      28    --undo|undo)
+      29 -    echo "==> Removing symlinks and restoring root sdk-pkg.json
+         -"                                                              
+      29 +    echo "==> Removing symlinks"                               
+      30      for c in "${COMPONENTS[@]}"; do
+      31        if [ -L "$SDK_ROOT/$c" ]; then
+      32          rm "$SDK_ROOT/$c"
+      33          echo "    removed symlink $SDK_ROOT/$c"
+      34        fi
+      35      done
+      36 +    # Also restore root sdk-pkg.json if a prior version of this
+         + script disabled it.                                           
+      37      if [ -f "$PKG_ROOT_OFF" ] && [ ! -f "$PKG_ROOT" ]; then
+      38        mv "$PKG_ROOT_OFF" "$PKG_ROOT"
+      38 -      echo "    restored $PKG_ROOT"                            
+      39 +      echo "    restored $PKG_ROOT (was disabled by older fix)"
+      40      fi
+      41      exit 0
+      42      ;;
+     ...
+      47    exit 1
+      48  fi
+      49  
+      49 -# Step 1: create per-component symlinks                        
+      50 +# If a previous run disabled root sdk-pkg.json, restore it — De
+         +vEco needs it.                                                 
+      51 +if [ -f "$PKG_ROOT_OFF" ] && [ ! -f "$PKG_ROOT" ]; then        
+      52 +  mv "$PKG_ROOT_OFF" "$PKG_ROOT"                               
+      53 +  echo "    restored $PKG_ROOT (was disabled by older fix)"    
+      54 +fi                                                             
+      55 +                                                               
+      56  for c in "${COMPONENTS[@]}"; do
+      57    if [ ! -d "$SDK_ROOT/openharmony/$c" ]; then
+      58      echo "    skip $c (openharmony/$c not present)"
+     ...
+      66    echo "    linked $SDK_ROOT/$c -> openharmony/$c"
+      67  done
+      68  
+      63 -# Step 2: disable the root sdk-pkg.json so hvigor doesn't treat
+         - the whole                                                     
+      64 -# sdk/default as a single bundled SDK (it would shadow the per-
+         -component scan).                                               
+      65 -if [ -f "$PKG_ROOT" ]; then                                    
+      66 -  mv "$PKG_ROOT" "$PKG_ROOT_OFF"                               
+      67 -  echo "    disabled $PKG_ROOT -> $PKG_ROOT_OFF"               
+      68 -elif [ -f "$PKG_ROOT_OFF" ]; then                              
+      69 -  echo "    root sdk-pkg.json already disabled"                
+      70 -fi                                                             
+      71 -                                                               
+      69  echo ""
+      70  echo "Done. Now Sync in DevEco."
+
+⏺ 实际上脚本里加了自动恢复逻辑 —— 直接重跑脚本就会先恢复 root sdk-pkg.json 再建
+  symlinks，不用手动 mv：
+
+  sudo bash scripts/fix-deveco-sdk.sh
+
+  然后启动 DevEco，Sync。如果 sync 还失败，把日志贴过来 —— 我们再看
+  _getLocalComponents 现在能扫到几个组件。
+
+✻ Baked for 56s
+
+❯ /Applications/DevEco-Studio.app/Contents/tools/node/bin/node                  
+  /Applications/DevEco-Studio.app/Contents/tools/hvigor/bin/hvigorw.js --sync   
+  -p product=default --analyze=normal --parallel --incremental --daemon         
+  [DBG] checkComponentExistence: required=toolchains,ets,js,native,previewer    
+  mapKeys= isHms=false                                                          
+  [DBG] getLocalSdks called with e=22                                           
+  [DBG] hosVersion=6.0.2                                                        
+  [DBG] _getLocalComponents returned 1 items                                    
+  [DBG] raw comp: path=HarmonyOS-6.0.2 v=6.0.2                                  
+  loc=/Applications/DevEco-Studio.app/contents/sdk/default                      
+  DBG components loaded:1                                                       
+  DBG comp:HarmonyOS-6.0.2 v=6.0.2                                              
+  loc=/Applications/DevEco-Studio.app/contents/sdk/default                      
+  [DEBUG] getLocalSdks return this._mapComponentsByPath(t)                      
+  [DBG] _mapComponentsByPath about to return with 1 items                       
+  [DBG] checkComponentExistence: required=toolchains,ets,js,native,previewer    
+  mapKeys=HarmonyOS-6.0.2 isHms=false                                           
+  > hvigor ERROR: 00303168 Configuration Error                                  
+  Error Message: SDK component missing.                                         
+
+⏺ 5 个顶层 symlinks 这条路走错了 —— _getLocalComponents 根本不扫顶层目录，只读根
+   sdk-pkg.json，然后通过 mapper 走 _parsingPlatforms 递归。
+
+  正确路径是建 HarmonyOS-6.0.2 -> openharmony 这一个 symlink，让 mapper
+  补丁能落到一个真实路径上。先看当前状态：
+
+  Listed 2 directories (ctrl+o to expand)
+
+⏺ mapKey 还是 HarmonyOS-6.0.2 说明走的是 o.set(path,e) 分支 —— 即 plugin 里
+  getHosSdkPath("6.0.2") 返回了空字符串，hos-config.json 
+  的磁盘补丁没生效。先看下 plugin 怎么读这个 config 的。
+
+  Searched for 1 pattern, read 1 file, listed 1 directory (ctrl+o to expand)
+
+⏺ 新发现 —— DevEco 重装后 hos-config.json 换了新文件，pathVersionMapper["6.0.2"]
+   现在是 "HarmonyOS NEXT2"（不是空，但也不是我们之前 patch 的值）。我们建 5
+  个独立 symlink 是错的方向，应该按这个 mapper 建一个 HarmonyOS NEXT2 -> 
+  openharmony 的 symlink。
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ pathVersionMapper["6.0.2"] 现在是 "HarmonyOS NEXT2"（带空格）。按这个值本应走
+  _parsingPlatforms 分支，但 log 显示走的是 o.set 分支。我看下 plugin
+  实际怎么传参的。
+
+  Searched for 4 patterns, read 3 files (ctrl+o to expand)
+
+⏺ 确认了核心逻辑：_parsingPlatforms 用 "openharmony" 作为 sdkType，会扫描
+  sdk/default/openharmony/<5 comp> —— 正是当前的 SDK 布局。所以只要
+  getHosSdkPath("6.0.2") 返回非空就该成功。
+
+  而 hos-config.json 磁盘上明明是 "6.0.2": "HarmonyOS 
+  NEXT2"（非空）。唯一解释：log 第一行有 --daemon，hvigor daemon 进程在用旧的 
+  module cache，没读到新的 hos-config。
+
+  先杀掉所有 hvigor daemon 再重试：
+
+  pkill -f hvigor || true
+  pkill -f "tools/node/bin/node" || true
+
+  然后 DevEco 里 Sync。如果还失败，我们再看新 log（_mapComponentsByPath about to
+   return with 应该会变成 6 items，map keys 应包含
+  ets/js/native/previewer/toolchains）。
+
+  顺带 —— 你做完上面的 fix-deveco-sdk.sh 之后建的 5 个顶层 symlinks
+  其实没用（hvigor 只通过 _parsingPlatforms
+  找组件，不直接扫顶层）。但留着也无害。
+
+✻ Crunched for 2m 48s
+
+❯ 修复啊                                                                        
+
+⏺ Bash(ps aux | grep -E "hvigor|tools/node/bin/node" | grep -v grep)
+  ⎿  jordanzt         71144   0.6  0.3 434059520  46848   ??  S    10:02PM
+       0:12.75 /Applications/DevEco-Studio.app/Contents/tools/node/bin/node
+      --max-old-space-size=8192 --max-semi-space-size=16 --expose-gc /Appli
+     … +73 lines (ctrl+o to expand)
+
+⏺ Bash(pkill -f "daemon-process-boot-script.js" 2>&1; pkill -f
+      "hvigor-java-daemon.jar" 2>&1; sleep 1; ps aux | grep -E
+      "daemon-process-boot|hvigor-java-daemon" | grep…)
+  ⎿  jordanzt         71144  11.2  0.4 423673088  75296   ??  R    10:02PM
+       0:12.90 /Applications/DevEco-Studio.app/Contents/tools/node/bin/node
+      --max-old-space-size=8192 --max-semi-space-size=16 --expose-gc /Appli
+     … +5 lines (ctrl+o to expand)
+
+⏺ Bash(kill -9 71144 2>&1; sleep 1; ps aux | grep -E
+      "daemon-process-boot|hvigor-java-daemon" | grep -v grep || echo "all
+      daemons killed")
+  ⎿  (eval):kill:1: kill 71144 failed: no such process
+     all daemons killed
+
+⏺ 所有 hvigor daemon 已经杀掉。现在去 DevEco 里 Sync —— 它会拉起新 daemon、重新
+  require hos-config.json，应该会走 _parsingPlatforms 分支扫到 5
+  个组件。如果还失败，把新日志贴过来。
+
+✻ Sautéed for 39s
+
+❯ 这次成功了，原因是什么？                                                      
+⏺ 根因有三层，缺一不可：
+
+  1. DevEco 6.0.2 的 SDK 是嵌套布局
+  新装出来的 SDK 把 ets/js/native/previewer/toolchains 这 5 个组件全塞进
+  sdk/default/openharmony/ 子目录，顶层只有一个
+  sdk-pkg.json（path="HarmonyOS-6.0.2"）。hvigor 默认扁平扫描只能扫到这 1
+  个根条目，看不到 5 个真正的组件。
+
+  2. 必须走 _parsingPlatforms 分支
+  _mapComponentsByPath 里有个开关：当 HOS_CONFIG.pathVersionMapper["6.0.2"]
+  非空字符串 时，才会走 _parsingPlatforms(o, e)，那个函数会用 PlatformSdks._base
+   = ["ets","js","native","previewer","toolchains"] 列表 +
+  getSdkType()="openharmony" 拼出 sdk/default/openharmony/<comp> 这 5
+  个路径，把它们加进 map。
+
+  重装 DevEco 后，磁盘上的 hos-config.json 实际上已经把 
+  pathVersionMapper["6.0.2"] 设成了 "HarmonyOS 
+  NEXT2"（非空），这层条件本来就满足。
+
+  3. 但是 hvigor daemon 缓存了启动时的 HOS_CONFIG
+  sync 命令带 --daemon，复用了一个 7:29PM 就启动的老 daemon —— 它的 Node require
+   缓存里还是很久以前的 hos-config.json，那时候 pathVersionMapper["6.0.2"]
+  还是空字符串，所以一直走错分支，map 里永远只有 1 个 entry。
+
+  pkill 强杀 daemon → DevEco 拉起新 daemon → 新 daemon 重新 require 磁盘上的
+  hos-config.json → 拿到非空值 → 走 _parsingPlatforms → map 里扫到 5 个组件 →
+  checkComponentExistence(toolchains,ets,js,native,previewer) 通过。
+
+  所以之前所有努力其实都没生效：
+  - 早期改 hvigorfile.ts 里 require 那段 monkey-patch —— 被老 daemon 屏蔽
+  - 改 hos-config.json 磁盘文件 —— 被老 daemon 的 require cache 屏蔽
+  - 建 5 个顶层 symlinks —— hvigor 根本不扫顶层，留着也没用
+  - 禁用根 sdk-pkg.json —— 反而触发 DevEco 启动校验失败
+
+  真正起作用的就是最后那一句 pkill -f daemon-process-boot-script.js。
+
+  这条经验非常 non-obvious，存到记忆里供未来调试参考。
+
+  Recalled 1 memory, wrote 2 memories (ctrl+o to expand)
+
+⏺ 一句话回顾：磁盘配置和 SDK 布局其实早就修好了，但 hvigor daemon
+  在内存里抱着启动时的老 hos-config.json 不放，sync 又复用了这个老
+  daemon，所以一直看到错误的空字符串走错分支。pkill 让新 daemon 重新读盘，5
+  个组件就被扫到了。已经把这个非显然事实存进项目记忆。
+
+✻ Cogitated for 1m 11s
+
+※ recap: 目标是修好这个 HarmonyOS 项目的 DevEco sync 失败。已修复 —— 杀掉缓存了旧 hos-config.json 的 hvigor daemon 后 sync 成功。下一步：可选清理之前没用的 5 个顶层 SDK symlinks。 (disable recaps in /config)

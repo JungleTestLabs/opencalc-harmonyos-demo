@@ -18,6 +18,8 @@ export class CalcEngine {
   private c: number = 0
   /** 是否为角度模式（否则为弧度） */
   private deg: boolean = true
+  /** 当前 x 变量值（用于函数绘图的逐点求值） */
+  currentX: number = 0
 
   /**
    * 主入口：计算表达式
@@ -28,6 +30,15 @@ export class CalcEngine {
   evaluate(equation: string, isDegree: boolean): number {
     this.eq = equation; this.p = -1; this.c = 0; this.deg = isDegree
     this.nx(); return this.parseExpression()
+  }
+
+  /**
+   * 按 x 求值（用于函数绘图）
+   * 先设置 currentX,再调用 evaluate
+   */
+  evalAt(equation: string, x: number, isDegree: boolean): number {
+    this.currentX = x
+    return this.evaluate(equation, isDegree)
   }
 
   /** 读取下一个字符 */
@@ -98,6 +109,24 @@ export class CalcEngine {
     else if (this.eat(101)) x = Math.E
     // 圆周率 π
     else if (this.eat(960)) x = Math.PI
+    // 单字符变量 'x'(必须在函数名扫描之前;若 x 后跟小写字母如 xp,让函数名扫描接管)
+    else if (this.c === 120) {
+      const nextC: number = this.p + 1 < this.eq.length ? this.eq.charCodeAt(this.p + 1) : -1
+      const isPartOfFunctionName: boolean = (nextC >= 97 && nextC <= 122)
+      if (!isPartOfFunctionName) {
+        this.nx()
+        x = this.currentX
+        if (this.eat(94)) x = this.powx(x, this.parseFactor())
+        return x
+      }
+      // 否则继续走函数名扫描(下面的分支)
+      while (this.c >= 97 && this.c <= 122) this.nx()
+      const fn: string = this.eq.substring(sp, this.p)
+      if (this.eat(40)) { x = this.parseExpression(); if (!this.eat(41)) x = this.parseFactor() }
+      else x = this.parseFactor()
+      if (fn === 'xp') x = this.powx(Math.E, x)
+      else ErrorFlags.syntax_error = true
+    }
     // 函数名（小写字母开头）
     else if (this.c >= 97 && this.c <= 122) {
       while (this.c >= 97 && this.c <= 122) this.nx()

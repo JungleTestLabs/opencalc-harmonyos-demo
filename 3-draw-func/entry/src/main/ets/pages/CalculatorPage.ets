@@ -1,6 +1,6 @@
 // OpenCalc — 主计算器页面（横竖屏自适应 + Android 配色）
 // 移植自：MainActivity.kt（1447行）
-import { promptAction } from '@kit.ArkUI'
+import { promptAction, router } from '@kit.ArkUI'
 import { pasteboard } from '@kit.BasicServicesKit'
 import { common } from '@kit.AbilityKit'
 import { Expression } from '../calculator/Expression'
@@ -260,6 +260,8 @@ export struct CalculatorPage {
         .border({ width: 1, color: this.getOp(), radius: 8 })
         .onClick((): void => { this.scientific = !this.scientific })
       Blank()
+      Text('绘图').fontSize(12).fontColor(this.getT2()).padding(8)
+        .onClick((): void => { router.pushUrl({ url: 'pages/GraphPage' }) })
       Text(this.showHistory ? '▲ 历史' : '▼ 历史').fontSize(12).fontColor(this.getT2()).padding(8)
         .onClick((): void => { this.showHistory = !this.showHistory })
       Text('⚙').fontSize(16).fontColor(this.getT2()).padding(8)

@@ -2,6 +2,6 @@
   "src": [
     "pages/Index",
     "pages/CalculatorPage",
-    "pages/DrawFuncPage"
+    "pages/GraphPage"
   ]
 }

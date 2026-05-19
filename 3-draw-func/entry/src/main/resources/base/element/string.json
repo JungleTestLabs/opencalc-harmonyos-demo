@@ -3,6 +3,12 @@
     { "name": "app_name", "value": "OpenCalc" },
     { "name": "module_desc", "value": "OpenCalc HarmonyOS" },
     { "name": "EntryAbility_desc", "value": "OpenCalc" },
-    { "name": "EntryAbility_label", "value": "OpenCalc" }
+    { "name": "EntryAbility_label", "value": "OpenCalc" },
+    { "name": "graph_button", "value": "绘图" },
+    { "name": "graph_title", "value": "函数绘图" },
+    { "name": "graph_hint_empty", "value": "请输入表达式" },
+    { "name": "graph_hint_syntax_error", "value": "表达式语法错误" },
+    { "name": "graph_hint_undefined", "value": "函数在该区间未定义" },
+    { "name": "graph_hint_timeout", "value": "采样提前结束" }
   ]
 }

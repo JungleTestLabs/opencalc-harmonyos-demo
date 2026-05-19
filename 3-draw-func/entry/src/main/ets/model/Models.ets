@@ -59,3 +59,28 @@ export const DEFAULT_PREFERENCES: CalculatorPreferences = {
   decimalSeparatorSymbol: '.',
   groupingSeparatorSymbol: ','
 }
+
+/** 函数绘图配置 */
+export interface GraphConfig {
+  xMin: number             // x 起点
+  xMax: number             // x 终点
+  sampleCount: number      // 采样点数 [200, 600]
+  canvasWidthPx: number    // Canvas 宽度像素
+  canvasHeightPx: number   // Canvas 高度像素
+  paddingPx: number        // 绘图区四周留白像素
+}
+
+/** 单个采样点 */
+export interface PlotPoint {
+  x: number       // x 值
+  y: number       // y 值(defined=false 时为 0,占位)
+  defined: boolean // 该点是否可绘
+}
+
+/** 一次绘图的产物 */
+export interface PlotResult {
+  points: PlotPoint[]  // 全部采样点
+  validCount: number   // defined=true 的点数
+  yMin: number         // 有效点的 y 最小值
+  yMax: number         // 有效点的 y 最大值
+}
