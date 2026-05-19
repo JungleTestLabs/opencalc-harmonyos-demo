@@ -88,7 +88,7 @@
 
 Pura 80 模拟器实测截图（HarmonyOS 6.0.2，1256×2760）：
 
-<img src="./specs/changes/20260518-requirement-add-percentage-button/screenshots/01_calculator_main.jpeg" alt="计算器主界面" width="280" />
+<img src="./specs/changes/20260518-requirement-add-percentage-button/screenshots/02_50_plus_10_pct.jpeg" alt="计算器主界面" width="280" />
 
 第一行 5 个按钮 `AC | ( | ) | % | ÷` 完整显示，`%` 加入后不溢出右边框。
 
