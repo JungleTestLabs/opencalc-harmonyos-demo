@@ -1,8 +1,9 @@
 // OpenCalc — 主计算器页面（横竖屏自适应 + Android 配色）
 // 移植自：MainActivity.kt（1447行）
-import { promptAction } from '@kit.ArkUI'
-import { pasteboard } from '@kit.BasicServicesKit'
+import { promptAction, router } from '@kit.ArkUI'
+import { pasteboard, BusinessError } from '@kit.BasicServicesKit'
 import { common } from '@kit.AbilityKit'
+import { hilog } from '@kit.PerformanceAnalysisKit'
 import { Expression } from '../calculator/Expression'
 import { CalcEngine } from '../calculator/Calculator'
 import { NumberFormatter } from '../calculator/NumberFormatter'
@@ -259,6 +260,15 @@ export struct CalculatorPage {
         .padding({ left: 12, right: 12, top: 4, bottom: 4 })
         .border({ width: 1, color: this.getOp(), radius: 8 })
         .onClick((): void => { this.scientific = !this.scientific })
+      Text('💰 小费').fontSize(12).fontColor(this.getOp())
+        .padding({ left: 12, right: 12, top: 4, bottom: 4 })
+        .border({ width: 1, color: this.getOp(), radius: 8 })
+        .margin({ left: 8 })
+        .onClick((): void => {
+          router.pushUrl({ url: 'pages/TipCalculatorPage' }).catch((e: BusinessError): void => {
+            hilog.warn(0x0000, 'TipNav', `pushUrl failed: %{public}s`, JSON.stringify(e))
+          })
+        })
       Blank()
       Text(this.showHistory ? '▲ 历史' : '▼ 历史').fontSize(12).fontColor(this.getT2()).padding(8)
         .onClick((): void => { this.showHistory = !this.showHistory })

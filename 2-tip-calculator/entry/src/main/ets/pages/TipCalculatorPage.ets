@@ -1,410 +1,207 @@
-// OpenCalc — 小费计算器页面
-// 增量需求：2-tip-calculator
-// 输入账单金额 + 小费比例 + 人数 → 自动计算每人应付
+// OpenCalc - 小费计算器页面
+// 设计文档: specs/changes/20260519-requirement-add-tip-calculator/delta-design.md §3.6
 import { router } from '@kit.ArkUI'
+import { hilog } from '@kit.PerformanceAnalysisKit'
+import { TipCalculator } from '../calculator/TipCalculator'
 
 @Entry
 @Component
-export struct TipCalculatorPage {
-  // ==================== 输入状态 ====================
-  @State amount: string = ''
+struct TipCalculatorPage {
+  @State amountText: string = ''
+  @State peopleText: string = ''
   @State tipPercent: number = 15
-  @State customTip: string = ''
-  @State people: string = ''
-  @State useCustomTip: boolean = false
+  @State isCustomMode: boolean = false
+  @State customTipText: string = ''
 
-  // ==================== 计算结果 ====================
-  @State tipAmount: string = ''
-  @State totalAmount: string = ''
-  @State perPerson: string = ''
-  @State errorMsg: string = ''
+  private static readonly TIERS: number[] = [10, 15, 18, 20]
 
-  // ==================== 预设比例 ====================
-  private tipPresets: number[] = [10, 15, 18, 20]
-
-  // ==================== 颜色定义（与主计算器一致）====================
-  private colorBg: string = '#0f0f1a'
-  private colorCard: string = '#1a1a2e'
-  private colorPrimary: string = '#e94560'
-  private colorPrimaryDim: string = '#b8304f'
-  private colorText: string = '#ffffff'
-  private colorTextDim: string = '#a0a0b0'
-  private colorInput: string = '#252540'
-  private colorBtn: string = '#2a2a45'
-  private colorBtnActive: string = '#e94560'
-  private colorSuccess: string = '#00e676'
-  private colorError: string = '#ff5252'
-
-  // ==================== 计算方法 ====================
-  private calculate(): void {
-    this.errorMsg = ''
-
-    // 输入验证
-    const amt: number = parseFloat(this.amount)
-    if (isNaN(amt) || this.amount.trim().length === 0) {
-      this.errorMsg = '请输入账单金额'
-      this.clearResults()
-      return
-    }
-    if (amt <= 0) {
-      this.errorMsg = '金额必须大于 0'
-      this.clearResults()
-      return
-    }
-
-    const ppl: number = parseInt(this.people)
-    if (isNaN(ppl) || this.people.trim().length === 0) {
-      this.errorMsg = '请输入人数'
-      this.clearResults()
-      return
-    }
-    if (ppl <= 0) {
-      this.errorMsg = '人数必须大于 0'
-      this.clearResults()
-      return
-    }
-
-    // 获取小费比例
-    let tip: number = this.tipPercent
-    if (this.useCustomTip) {
-      const custom: number = parseFloat(this.customTip)
-      if (isNaN(custom) || custom < 0) {
-        this.errorMsg = '请输入有效的小费比例'
-        this.clearResults()
-        return
-      }
-      tip = custom
-    }
-
-    // 计算结果
-    const tipVal: number = amt * tip / 100
-    const totalVal: number = amt + tipVal
-    const perVal: number = totalVal / ppl
-
-    this.tipAmount = this.formatCurrency(tipVal)
-    this.totalAmount = this.formatCurrency(totalVal)
-    this.perPerson = this.formatCurrency(perVal)
+  private computePerPerson(): string {
+    const amount: number = parseFloat(this.amountText)
+    const people: number = parseInt(this.peopleText, 10)
+    const tip: number = this.isCustomMode ? parseFloat(this.customTipText) : this.tipPercent
+    return TipCalculator.calcPerPerson(amount, people, tip)
   }
 
-  private clearResults(): void {
-    this.tipAmount = ''
-    this.totalAmount = ''
-    this.perPerson = ''
-  }
-
-  private formatCurrency(val: number): string {
-    return val.toFixed(2)
-  }
-
-  // ==================== 事件处理 ====================
-  private onTipSelect(pct: number): void {
-    this.useCustomTip = false
-    this.tipPercent = pct
-    this.calculate()
-  }
-
-  private onCustomTipInput(): void {
-    this.useCustomTip = true
-    this.calculate()
-  }
-
-  private onAmountChange(value: string): void {
-    // 只允许数字和小数点
-    const filtered: string = value.replace(/[^0-9.]/g, '')
-    // 防止多个小数点
-    const parts: string[] = filtered.split('.')
-    if (parts.length > 2) {
-      this.amount = parts[0] + '.' + parts.slice(1).join('')
-    } else {
-      this.amount = filtered
-    }
-    if (this.amount.length > 0) {
-      this.calculate()
-    }
-  }
-
-  private onPeopleChange(value: string): void {
-    // 只允许整数
-    const filtered: string = value.replace(/[^0-9]/g, '')
-    this.people = filtered
-    if (this.people.length > 0) {
-      this.calculate()
-    }
-  }
-
-  private onBack(): void {
+  private goBack(): void {
     router.back()
   }
 
-  // ==================== UI 构建器 ====================
-  @Builder
-  Header() {
-    Row() {
-      Text('←')
-        .fontSize(24)
-        .fontColor(this.colorText)
-        .width(40)
-        .height(40)
-        .textAlign(TextAlign.Center)
-        .borderRadius(20)
-        .backgroundColor(this.colorBtn)
-        .onClick(() => { this.onBack() })
-
-      Text('💰 小费计算器')
-        .fontSize(20)
-        .fontWeight(FontWeight.Bold)
-        .fontColor(this.colorText)
-        .margin({ left: 12 })
-
-      Blank()
-    }
-    .width('100%')
-    .padding({ left: 16, right: 16, top: 12, bottom: 8 })
-  }
-
-  @Builder
-  AmountInput() {
-    Column() {
-      Text('账单金额')
-        .fontSize(14)
-        .fontColor(this.colorTextDim)
-        .margin({ bottom: 8 })
-
-      Row() {
-        Text('¥')
-          .fontSize(28)
-          .fontWeight(FontWeight.Bold)
-          .fontColor(this.colorPrimary)
-          .margin({ right: 8 })
-
-        TextInput({ text: this.amount, placeholder: '0.00' })
-          .fontSize(28)
-          .fontWeight(FontWeight.Bold)
-          .fontColor(this.colorText)
-          .placeholderColor(this.colorTextDim)
-          .backgroundColor(Color.Transparent)
-          .type(InputType.Number)
-          .border({ width: 0 })
-          .layoutWeight(1)
-          .onChange((value: string) => { this.onAmountChange(value) })
-      }
-      .width('100%')
-      .height(56)
-      .backgroundColor(this.colorInput)
-      .borderRadius(12)
-      .padding({ left: 16, right: 16 })
-    }
-    .width('100%')
-    .padding({ left: 16, right: 16, top: 8, bottom: 8 })
-  }
-
-  @Builder
-  TipSelector() {
-    Column() {
-      Text('小费比例')
-        .fontSize(14)
-        .fontColor(this.colorTextDim)
-        .margin({ bottom: 8 })
-
-      Row() {
-        ForEach(this.tipPresets, (pct: number) => {
-          Text(`${pct}%`)
-            .fontSize(16)
-            .fontWeight(FontWeight.Medium)
-            .fontColor(this.tipPercent === pct && !this.useCustomTip ? '#ffffff' : this.colorTextDim)
-            .width('22%')
-            .height(44)
-            .textAlign(TextAlign.Center)
-            .borderRadius(10)
-            .backgroundColor(this.tipPercent === pct && !this.useCustomTip ? this.colorBtnActive : this.colorBtn)
-            .margin({ right: 8 })
-            .onClick(() => { this.onTipSelect(pct) })
-        })
-
-        Text('自定义')
-          .fontSize(14)
-          .fontWeight(FontWeight.Medium)
-          .fontColor(this.useCustomTip ? '#ffffff' : this.colorTextDim)
-          .width('22%')
-          .height(44)
-          .textAlign(TextAlign.Center)
-          .borderRadius(10)
-          .backgroundColor(this.useCustomTip ? this.colorBtnActive : this.colorBtn)
-          .onClick(() => {
-            this.useCustomTip = true
-            this.calculate()
-          })
-      }
-      .width('100%')
-      .justifyContent(FlexAlign.Start)
-
-      if (this.useCustomTip) {
-        Row() {
-          TextInput({ text: this.customTip, placeholder: '输入比例' })
-            .fontSize(16)
-            .fontColor(this.colorText)
-            .placeholderColor(this.colorTextDim)
-            .backgroundColor(Color.Transparent)
-            .type(InputType.Number)
-            .border({ width: 0 })
-            .layoutWeight(1)
-            .onChange((value: string) => {
-              this.customTip = value
-              this.calculate()
-            })
-
-          Text('%')
-            .fontSize(16)
-            .fontColor(this.colorPrimary)
-            .margin({ left: 8 })
-        }
-        .width('100%')
-        .height(44)
-        .backgroundColor(this.colorInput)
-        .borderRadius(10)
-        .padding({ left: 16, right: 16 })
-        .margin({ top: 8 })
-      }
-    }
-    .width('100%')
-    .padding({ left: 16, right: 16, top: 8, bottom: 8 })
-  }
-
-  @Builder
-  PeopleInput() {
-    Column() {
-      Text('用餐人数')
-        .fontSize(14)
-        .fontColor(this.colorTextDim)
-        .margin({ bottom: 8 })
-
-      Row() {
-        Text('👥')
-          .fontSize(22)
-          .margin({ right: 8 })
-
-        TextInput({ text: this.people, placeholder: '1' })
-          .fontSize(24)
-          .fontWeight(FontWeight.Bold)
-          .fontColor(this.colorText)
-          .placeholderColor(this.colorTextDim)
-          .backgroundColor(Color.Transparent)
-          .type(InputType.Number)
-          .border({ width: 0 })
-          .layoutWeight(1)
-          .onChange((value: string) => { this.onPeopleChange(value) })
-      }
-      .width('100%')
-      .height(56)
-      .backgroundColor(this.colorInput)
-      .borderRadius(12)
-      .padding({ left: 16, right: 16 })
-    }
-    .width('100%')
-    .padding({ left: 16, right: 16, top: 8, bottom: 8 })
-  }
-
-  @Builder
-  ResultCard() {
-    Column() {
-      if (this.errorMsg.length > 0) {
-        Text(this.errorMsg)
-          .fontSize(14)
-          .fontColor(this.colorError)
-          .textAlign(TextAlign.Center)
-          .width('100%')
-          .padding(16)
-      } else if (this.perPerson.length > 0) {
-        // 每人应付 - 主结果显示
-        Column() {
-          Text('每人应付')
-            .fontSize(13)
-            .fontColor(this.colorTextDim)
-            .margin({ bottom: 4 })
-
-          Row() {
-            Text('¥')
-              .fontSize(20)
-              .fontColor(this.colorSuccess)
-              .margin({ right: 4 })
-            Text(this.perPerson)
-              .fontSize(36)
-              .fontWeight(FontWeight.Bold)
-              .fontColor(this.colorSuccess)
-          }
-
-          Divider()
-            .color('#3a3a55')
-            .margin({ top: 12, bottom: 12 })
-
-          // 明细
-          Row() {
-            Column() {
-              Text('小费')
-                .fontSize(12)
-                .fontColor(this.colorTextDim)
-                .margin({ bottom: 2 })
-              Text(`¥${this.tipAmount}`)
-                .fontSize(16)
-                .fontColor(this.colorText)
-            }
-            .layoutWeight(1)
-
-            Column() {
-              Text('总计')
-                .fontSize(12)
-                .fontColor(this.colorTextDim)
-                .margin({ bottom: 2 })
-              Text(`¥${this.totalAmount}`)
-                .fontSize(16)
-                .fontColor(this.colorText)
-            }
-            .layoutWeight(1)
-
-            Column() {
-              Text('人数')
-                .fontSize(12)
-                .fontColor(this.colorTextDim)
-                .margin({ bottom: 2 })
-              Text(`${this.people || '1'}`)
-                .fontSize(16)
-                .fontColor(this.colorText)
-            }
-            .layoutWeight(1)
-          }
-          .width('100%')
-        }
-        .width('100%')
-        .padding(20)
-      }
-    }
-    .width('100%')
-    .backgroundColor(this.colorCard)
-    .borderRadius(16)
-    .padding(this.perPerson.length > 0 || this.errorMsg.length > 0 ? 0 : 24)
-    .margin({ left: 16, right: 16, top: 16 })
-  }
-
-  // ==================== 主构建 ====================
   build() {
     Column() {
       this.Header()
-
       Scroll() {
         Column() {
           this.AmountInput()
-          this.TipSelector()
           this.PeopleInput()
-          this.ResultCard()
+          this.TipTierRow()
+          if (this.isCustomMode) {
+            this.CustomTipInput()
+          }
+          this.ResultPanel()
         }
         .width('100%')
-        .padding({ bottom: 32 })
+        .padding({ left: 16, right: 16, top: 8, bottom: 16 })
       }
       .layoutWeight(1)
-      .scrollBar(BarState.Off)
+      .width('100%')
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(this.colorBg)
+    .backgroundColor('#FFFFFF')
+  }
+
+  @Builder Header() {
+    Row() {
+      Text('← 返回')
+        .fontSize(14)
+        .fontColor('#595959')
+        .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+        .onClick((): void => { this.goBack() })
+      Blank()
+      Text('小费计算器')
+        .fontSize(20)
+        .fontColor('#000000')
+        .fontWeight(FontWeight.Medium)
+      Blank()
+      Text('  ')
+        .fontSize(14)
+        .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+    }
+    .width('100%')
+    .padding({ left: 16, right: 16, top: 12, bottom: 12 })
+    .border({ width: { bottom: 1 }, color: '#E8E8E8' })
+  }
+
+  @Builder AmountInput() {
+    Column() {
+      Text('账单金额')
+        .fontSize(14)
+        .fontColor('#595959')
+        .margin({ top: 12, bottom: 6 })
+        .alignSelf(ItemAlign.Start)
+      TextInput({ placeholder: '请输入金额', text: this.amountText })
+        .type(InputType.NUMBER_DECIMAL)
+        .inputFilter('^\\d*\\.?\\d{0,2}$', (err: string): void => {
+          hilog.warn(0x0000, 'TipCalc', `amount filter rejected: %{public}s`, err)
+        })
+        .maxLength(15)
+        .fontSize(20)
+        .height(48)
+        .backgroundColor('#EFEFEF')
+        .borderRadius(12)
+        .padding({ left: 12, right: 12 })
+        .onChange((value: string): void => { this.amountText = value })
+    }
+    .width('100%')
+  }
+
+  @Builder PeopleInput() {
+    Column() {
+      Text('就餐人数')
+        .fontSize(14)
+        .fontColor('#595959')
+        .margin({ top: 12, bottom: 6 })
+        .alignSelf(ItemAlign.Start)
+      TextInput({ placeholder: '请输入人数', text: this.peopleText })
+        .type(InputType.Number)
+        .inputFilter('^\\d*$', (err: string): void => {
+          hilog.warn(0x0000, 'TipCalc', `people filter rejected: %{public}s`, err)
+        })
+        .maxLength(3)
+        .fontSize(20)
+        .height(48)
+        .backgroundColor('#EFEFEF')
+        .borderRadius(12)
+        .padding({ left: 12, right: 12 })
+        .onChange((value: string): void => { this.peopleText = value })
+    }
+    .width('100%')
+  }
+
+  @Builder TipTierRow() {
+    Column() {
+      Text('小费率')
+        .fontSize(14)
+        .fontColor('#595959')
+        .margin({ top: 12, bottom: 6 })
+        .alignSelf(ItemAlign.Start)
+      Row() {
+        ForEach(TipCalculatorPage.TIERS, (tier: number): void => {
+          this.TierButton(tier)
+        }, (tier: number): string => `${tier}`)
+        this.CustomButton()
+      }
+      .width('100%')
+      .justifyContent(FlexAlign.SpaceBetween)
+    }
+    .width('100%')
+  }
+
+  @Builder TierButton(tier: number) {
+    Text(`${tier}%`)
+      .fontSize(14)
+      .fontColor(!this.isCustomMode && this.tipPercent === tier ? '#FFFFFF' : '#000000')
+      .height(40)
+      .layoutWeight(1)
+      .textAlign(TextAlign.Center)
+      .backgroundColor(!this.isCustomMode && this.tipPercent === tier ? '#B4D2E4' : '#EFEFEF')
+      .borderRadius(12)
+      .margin({ right: 8 })
+      .onClick((): void => {
+        this.tipPercent = tier
+        this.isCustomMode = false
+      })
+  }
+
+  @Builder CustomButton() {
+    Text('自定义')
+      .fontSize(14)
+      .fontColor(this.isCustomMode ? '#FFFFFF' : '#000000')
+      .height(40)
+      .layoutWeight(1)
+      .textAlign(TextAlign.Center)
+      .backgroundColor(this.isCustomMode ? '#B4D2E4' : '#EFEFEF')
+      .borderRadius(12)
+      .onClick((): void => {
+        this.isCustomMode = true
+      })
+  }
+
+  @Builder CustomTipInput() {
+    Column() {
+      Text('自定义小费率 (%)')
+        .fontSize(14)
+        .fontColor('#595959')
+        .margin({ top: 12, bottom: 6 })
+        .alignSelf(ItemAlign.Start)
+      TextInput({ placeholder: '0 - 100', text: this.customTipText })
+        .type(InputType.NUMBER_DECIMAL)
+        .inputFilter('^\\d{0,3}(\\.\\d{0,2})?$', (err: string): void => {
+          hilog.warn(0x0000, 'TipCalc', `customTip filter rejected: %{public}s`, err)
+        })
+        .maxLength(6)
+        .fontSize(20)
+        .height(48)
+        .backgroundColor('#EFEFEF')
+        .borderRadius(12)
+        .padding({ left: 12, right: 12 })
+        .onChange((value: string): void => { this.customTipText = value })
+    }
+    .width('100%')
+  }
+
+  @Builder ResultPanel() {
+    Column() {
+      Text('每人应付')
+        .fontSize(14)
+        .fontColor('#595959')
+        .margin({ top: 24, bottom: 8 })
+      Text(this.computePerPerson())
+        .fontSize(36)
+        .fontColor('#000000')
+        .fontWeight(FontWeight.Bold)
+    }
+    .width('100%')
+    .alignItems(HorizontalAlign.Center)
   }
 }
