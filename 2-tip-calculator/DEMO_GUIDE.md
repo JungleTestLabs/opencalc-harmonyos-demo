@@ -26,7 +26,7 @@
 | 设计审视 | `design-review.md` | 完整性 / 一致性 / 规范性三大维度通过 |
 | 任务拆分 | `tasks.md` + `todo.md` | 4 阶段 6 任务(纯函数 → 页面 → 注册 → 入口 → 编译 → UI 验证) |
 | 实施 | `apply-report.md` | 含 P-01 后置缺陷修复条目(getter → method) |
-| 爹助验证 | `verification-report.md` | 模拟器 8 用例实测,3 组数学验证 100% 命中 |
+| 最终验证 | `verification-report.md` | 模拟器 8 用例实测,3 组数学验证 100% 命中 |
 
 ## 3. 生成了哪些 SPEC 文件
 
@@ -40,7 +40,7 @@
 - [`design-review.md`](./specs/changes/20260519-requirement-add-tip-calculator/design-review.md) — 设计审视报告
 - [`tasks.md`](./specs/changes/20260519-requirement-add-tip-calculator/tasks.md) — 任务清单
 - [`apply-report.md`](./specs/changes/20260519-requirement-add-tip-calculator/apply-report.md) — 实施报告(含 P-01 缺陷修复)
-- [`verification-report.md`](./specs/changes/20260519-requirement-add-tip-calculator/verification-report.md) — 爹助验证报告(含模拟器实测 7 张截图)
+- [`verification-report.md`](./specs/changes/20260519-requirement-add-tip-calculator/verification-report.md) — 最终验证报告(含模拟器实测 7 张截图)
 
 ## 4. 改了哪些文件
 
@@ -138,7 +138,7 @@ Pura 80 模拟器实测(HarmonyOS 6.0.2,1256×2760):
 | 7 | ⭐ **自定义值计算** | 自定义模式输入 25 | 人均 = `31.25`(100×1.25/4) | **31.25** ✅ | [07](./specs/changes/20260519-requirement-add-tip-calculator/screenshots/07_custom_25pct_result_3125.jpeg) |
 | 8 | 返回主页 | 点击「← 返回」 | 弹回 CalculatorPage,主键盘完整恢复 | ✅ | [05](./specs/changes/20260519-requirement-add-tip-calculator/screenshots/05_back_to_main.jpeg) |
 
-### 爹助审查
+### 最终审查
 
 - 代码审查 8 维度全部 [PASS](正确性 / 鲁棒性 / 安全性 / 可维护性 / 性能 / 主题响应 / 导航 / 不污染基线)
 - 风险与缓解:FM-CALC-01..06(`isValid*` + PLACEHOLDER)+ FM-NAV-01(`router.catch` 兜底)真机覆盖

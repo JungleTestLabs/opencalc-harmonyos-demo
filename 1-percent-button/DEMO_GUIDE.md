@@ -26,7 +26,7 @@
 | 设计审视 | `design-review.md` | 7 维度通过 |
 | 任务拆分 | `tasks.md` + `todo.md` | 7 个任务（2 实现 + 1 修改 + 3 测试 + 1 构建） |
 | 实施 | `apply-report.md` | 实际改动 + 静态等价审查 |
-| 爹助验证 | `verification-report.md` | 模拟器 5 用例实测 |
+| 最终验证 | `verification-report.md` | 模拟器 5 用例实测 |
 
 ## 3. 生成了哪些 SPEC 文件
 
@@ -41,7 +41,7 @@
 - [`design-review.md`](./specs/changes/20260518-requirement-add-percentage-button/design-review.md) — 设计审视报告
 - [`tasks.md`](./specs/changes/20260518-requirement-add-percentage-button/tasks.md) — 任务清单
 - [`apply-report.md`](./specs/changes/20260518-requirement-add-percentage-button/apply-report.md) — 实施报告
-- [`verification-report.md`](./specs/changes/20260518-requirement-add-percentage-button/verification-report.md) — 爹助验证报告（含模拟器实测 5 张截图）
+- [`verification-report.md`](./specs/changes/20260518-requirement-add-percentage-button/verification-report.md) — 最终验证报告（含模拟器实测 5 张截图）
 
 ## 4. 改了哪些文件
 
@@ -102,7 +102,7 @@ Pura 80 模拟器实测截图（HarmonyOS 6.0.2，1256×2760）：
 | 4 | 乘法百分比 | `50×10%=` | 5 | **5** ✅ | [04](./specs/changes/20260518-requirement-add-percentage-button/screenshots/04_50_times_10_pct.jpeg) |
 | 5 | 独立百分比 | `25%=` | 0.25 | **0.25** ✅ | [05](./specs/changes/20260518-requirement-add-percentage-button/screenshots/05_25_pct.jpeg) |
 
-### 爹助审查
+### 最终审查
 
 - 代码审查 7 维度全部 [PASS]（正确性 / 鲁棒性 / 安全性 / 可维护性 / 性能 / 主题响应 / 布局合理性）
 - 风险与缓解：6 项 FMEA 全部覆盖（孤立 `%` / `%%` 连续 / `%` 后接数字 / 主题切换 / 横屏 5 列 / 历史回填）
